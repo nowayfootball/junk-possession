@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+_data/
+out/
+clips/
+*.duckdb
+paper/latex/*.pdf
+paper/latex/*.aux
+paper/latex/*.bbl
+paper/latex/*.blg
+paper/latex/*.log
+paper/latex/*.out

@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+title: "Space-Creating versus Dead Possession: An Off-Ball Possession-Quality Index for Broadcast Football"
+authors:
+  - family-names: Choi
+    given-names: Seongjin
+    orcid: "https://orcid.org/0009-0001-3193-7424"
+    email: nowayfootball@gmail.com
+    affiliation: "Independent researcher"
+type: software
+license: MIT
+repository-code: "https://github.com/nowayfootball/junk-possession"
+keywords:
+  - football analytics
+  - possession value
+  - expected threat
+  - pitch control
+  - space creation
+  - game state reconstruction
+preferred-citation:
+  type: article
+  title: "Space-Creating versus Dead Possession: An Off-Ball Possession-Quality Index for Broadcast Football"
+  authors:
+    - family-names: Choi
+      given-names: Seongjin
+      orcid: "https://orcid.org/0009-0001-3193-7424"
+  year: 2026

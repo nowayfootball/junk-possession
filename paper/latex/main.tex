@@ -1,0 +1,520 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage{xcolor}
+\hypersetup{
+  pdftitle={Space-Creating versus Dead Possession: An Off-Ball Possession-Quality Index for Broadcast Football},
+  pdfauthor={Seongjin Choi},
+  pdfsubject={Possession quality, expected threat, space creation, spatial football analytics},
+  pdfkeywords={football analytics, possession value, expected threat, pitch control, space creation}
+}
+
+\newcommand{\pp}{\,pp}   % percentage points
+\newcommand{\junk}{\textsc{junk-open}}
+\newcommand{\eff}{\textsc{eff}}
+
+\title{Space-Creating versus Dead Possession:\\An Off-Ball Possession-Quality Index for Broadcast Football}
+
+\author{%
+  Seongjin Choi\thanks{Independent researcher.
+  ORCID: \url{https://orcid.org/0009-0001-3193-7424}.
+  Code: \url{https://github.com/nowayfootball/junk-possession}.
+  Contact: \texttt{nowayfootball@gmail.com}.}%
+}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Ball possession is the most-cited and most-misleading number in football:
+sixty percent of the ball spent recycling in one's own half is not the same as
+sixty percent spent pinning the opponent back. Existing possession-value
+frameworks --- expected threat, VAEP, on-ball value --- refine the count by
+pricing \emph{on-ball} actions, but they are blind to the off-ball question a
+sterile possession actually poses: did holding the ball \emph{create space},
+or was the circulation genuinely dead? We answer this in two layers. First, an
+event-side \emph{junk-possession index} decomposes possession into sequences,
+prices each by its counterfactual threat potential under an expected-threat
+grid, and --- after reconstructing the live scoreline to exclude
+lead-protecting circulation --- flags low-threat sequences in tied-or-losing
+game states. On the 2026 FIFA World Cup (101 matches, 202 team-matches) this
+flag correlates negatively with points ($r=-0.39$) and expected-goal
+difference ($r=-0.52$); teams above 55\% possession with below-median
+efficiency average 0.62 goals and 1.00 points versus 2.24 and 2.23 for
+efficient dominators. Crucially, the flag is not a repackaging of on-ball
+value: with team offensive VAEP and field tilt held fixed in the same
+regression, the junk flag remains a strong negative predictor of points
+($p<10^{-4}$) while VAEP itself is not significant --- the index carries
+off-ball information that on-ball action value does not. Second, for a flagged
+window we resolve \emph{why} it was junk by projecting broadcast video to pitch
+coordinates and measuring a \emph{Space-Creation Index} (SCI): whether the
+possession pushed the opponent's block back. Across 31 flagged windows from
+nine World Cup matches, 74\% are spatially confirmed dead, 19\% weak
+progression, and 6\% genuine space creation that the event flag alone would
+misclassify --- including a possessing team that dominated 73\% of the ball and
+went out on penalties (two windows, both spatially dead) set against an
+unlucky window that created space without a shot. The two layers together
+separate ``unlucky'' from ``sterile'' possession, a distinction on-ball
+possession value cannot make.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+Possession percentage is quoted after every match and understood by almost
+no-one. It conflates three different things a team can do with the ball ---
+where it holds the ball, whether that holding threatens the goal, and in what
+game state it happens --- into a single number that is frequently uncorrelated
+with, and sometimes inversely related to, winning. The analytics response has
+been to \emph{value} what happens on the ball: expected threat
+(xT)~\citep{singh2019xt} grids the pitch by scoring potential; VAEP~\citep{decroos2019actions}
+and EPV~\citep{fernandez2021epv} estimate the change in scoring/conceding
+probability around each action; on-ball value~\citep{statsbomb2021obv} and
+pass-risk models~\citep{power2017passes,link2016dfl} price individual
+touches. These are real advances, and they are all fundamentally
+\emph{on-ball}: they evaluate the decision of the player in possession.
+
+But the question a sterile possession poses is off-ball. When a team holds 65\%
+of the ball, draws 0--0, and loses on penalties, we want to know whether the
+possession was \emph{unlucky} --- it dragged the opponent's block out of shape
+and manufactured dangerous space that went unconverted --- or \emph{dead} ---
+the block never moved and the ball simply circulated. On-ball action value
+cannot tell these apart, because the distinguishing evidence is the position of
+the twenty-one players \emph{without} the ball: whether the defensive block was
+compressed and displaced. That evidence is spatial, and for the vast majority
+of matches --- outside the handful of leagues with commercial tracking --- the
+only available source of it is the broadcast video.
+
+This paper contributes an off-ball possession-quality framework in two layers:
+
+\begin{enumerate}
+\item \textbf{An event-side junk-possession index} (Section~\ref{sec:index})
+that flags low-threat possession in decision-relevant game states, and a
+validation battery (Section~\ref{sec:validation}) showing it predicts
+outcomes, survives out-of-sample tests, and --- our central claim --- is
+\emph{orthogonal} to on-ball possession value: controlling for VAEP does not
+remove its predictive content.
+\item \textbf{A spatial Space-Creation Index} (Section~\ref{sec:sci}) computed
+from broadcast video via a game-state-reconstruction (GSR) pipeline, which
+adjudicates \emph{why} a flagged possession was junk --- space-creating or
+dead --- and a tournament-scale study of 31 flagged windows from nine World Cup
+matches (Section~\ref{sec:results}).
+\end{enumerate}
+
+The event layer scans whole matches cheaply and plants time-stamped flags; the
+spatial layer answers ``why'' on the short broadcast windows the flags point
+to. Neither layer alone suffices: event data cannot see the block, and
+processing 90 minutes of broadcast video per match to pitch coordinates is
+neither necessary nor, on commodity hardware, cheap. Our position is that the
+macro/micro split is the practical way to bring off-ball spatial evidence to
+possession analysis at the scale of a whole tournament.
+
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Possession value.} Expected threat~\citep{singh2019xt} assigns each
+pitch location a scoring potential and values ball progression between
+locations. VAEP~\citep{decroos2019actions} and its EPV
+predecessors~\citep{fernandez2021epv} learn, from event or tracking data, the
+change in scoring and conceding probability that each action induces, thereby
+valuing defensive actions, failed actions, and risk. On-ball
+value~\citep{statsbomb2021obv} is a commercial analogue. All price the action
+of the player on the ball; none model whether a possession reshaped the
+off-ball defensive block. Our index is complementary: Section~\ref{sec:vaep}
+shows empirically that it captures outcome-relevant variance VAEP does not.
+
+\paragraph{Sterile possession and territory.} ``Sterile domination'' and
+``field tilt'' (share of final-third touches) are established descriptive
+concepts in the analytics community. We show (Section~\ref{sec:partial}) that
+field tilt explains expected goals but not points, and that the junk flag
+carries points-relevant information beyond tilt --- possession quality and
+territory are different axes.
+
+\paragraph{Pitch control and space.} Pitch-control
+models~\citep{spearman2017physics,spearman2018beyond} estimate, from player
+positions, which team controls each point of the pitch; they require the
+positions of all players. The Space-Creation Index is a differential
+pitch-control statistic. Because broadcast video shows only a subset of
+players, computing it from video invokes the off-screen-imputation problem
+studied in our companion work; here we use the same CPU-only GSR pipeline and
+report windows where the spatial verdict is robust to that imputation.
+
+\paragraph{Broadcast GSR.} Turning broadcast footage into pitch coordinates
+combines camera calibration~\citep{gutierrez2024pnlcalib,falaleev2024keypoints},
+multi-object tracking~\citep{aharon2022botsort}, and team assignment, evaluated
+by GS-HOTA~\citep{somers2024soccernet}. Trajectory-imputation methods for the
+players a camera or sensor misses~\citep{omidshafiei2022,everett2023inferring,
+capellera2024transportmer} are learned and typically bidirectional; our
+pipeline is training-free and online. We consume GSR output as a metric
+substrate rather than advancing GSR itself.
+
+\section{The Junk-Possession Index}
+\label{sec:index}
+
+\paragraph{Sequences and sequence value.} We segment each match into possession
+sequences: maximal runs of consecutive events by one team. Each sequence $s$ is
+priced by
+\begin{equation}
+\mathrm{value}(s) = \underbrace{\max(0,\ \mathrm{xT}_{\max}(s) - \mathrm{xT}_{\mathrm{start}}(s))}_{\text{(i) counterfactual threat potential}}
++ 0.7\,\underbrace{\mathrm{xG}(s)}_{\text{(ii) realised shot}}
++ 0.10\,\underbrace{\mathbb{1}[\text{box entry}]}_{\text{(iii) penalty-box entry}},
+\label{eq:value}
+\end{equation}
+where $\mathrm{xT}$ is a Karun-Singh-style expected-threat grid evaluated at
+each touch location. Term (i) is the design core: a sequence is credited for
+the \emph{peak} threat location it reached even if no shot resulted, so a
+possession that worked the ball into a dangerous position but did not finish is
+not scored as worthless. Term (ii) is the quality of the shot the sequence
+produced, if any; because the event feed's shot-xG field is a constant
+placeholder, we substitute our own gradient-boosted xG model evaluated on shot
+location (body part and phase approximated). Term (iii) rewards penalty-box
+entry. Sequence values are normalised by the corpus-wide 90th percentile to
+$q(s) \in [0,1]$; a sequence with $q < 0.15$ is a \emph{junk sequence} ---
+sustained possession of negligible threat.
+
+\paragraph{Game-state normalisation.} Circulating in one's own half to protect
+a lead is sound tactics, not junk. We reconstruct the live scoreline from goal
+events and tag each sequence with the possessing team's goal difference at its
+start. The headline metric \junk{} counts junk-sequence share only in
+\emph{tied-or-losing} states ($\text{state} \le 0$) --- circulation with no
+excuse. Team-level aggregates (Table~\ref{tab:metrics}) follow: raw possession,
+threat-weighted \emph{effective} possession, efficiency
+$\eff = \sum_s n_s q_s / \sum_s n_s$, \junk{}, field tilt, and a sterile index.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+Metric & Definition \\
+\midrule
+Raw\% & Share of on-ball events \\
+Effective\% & Threat-weighted possession share, $\sum n_s q_s$ \\
+Efficiency (\eff) & $\sum n_s q_s / \sum n_s \in [0,1]$ \\
+\junk{} & Junk-sequence share in tied-or-losing states \\
+Field tilt & Final-third share of possession \\
+Sterile index & $(\text{Raw}-50)\times(1-\eff)$ \\
+\bottomrule
+\end{tabular}
+\caption{Team-level possession-quality metrics.}
+\label{tab:metrics}
+\end{table}
+
+\section{Validation}
+\label{sec:validation}
+
+We validate on all 202 team-match rows of the 2026 FIFA World Cup group and
+knockout stages (101 matches). Knockout draws decided on penalties are scored
+by their shootout result (advance $=$ win), not as draws.
+
+\subsection{Does junk possession relate to outcomes?}
+\label{sec:corr}
+
+Table~\ref{tab:corr} gives Pearson correlations of each possession metric with
+match outcomes. \junk{} is negatively associated with expected goals
+($-0.38$), goals ($-0.37$), points ($-0.39$), and xG difference ($-0.52$):
+the more a team circulates without threat in a tied-or-losing state, the less
+it actually creates and wins. Threat-weighting helps --- effective possession
+tracks xG better than raw possession ($0.55$ vs $0.49$) --- and efficiency is
+the cleanest threat signal ($0.59$). Field tilt explains xG well ($0.59$) but
+points poorly ($0.19$): camping in the final third without winning is precisely
+what junk captures and tilt does not (Section~\ref{sec:partial}).
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+Metric & Team xG & Goals & Points & xG diff \\
+\midrule
+Raw\%        & $+0.49$ & $+0.34$ & $+0.39$ & $+0.62$ \\
+Effective\%  & $+0.55$ & $+0.39$ & $+0.42$ & $+0.70$ \\
+Efficiency   & $+0.59$ & $+0.42$ & $+0.33$ & $+0.64$ \\
+\junk{}      & $-0.38$ & $-0.37$ & $-0.39$ & $-0.52$ \\
+Field tilt   & $+0.59$ & $+0.28$ & $+0.19$ & $+0.61$ \\
+\bottomrule
+\end{tabular}
+\caption{Pearson correlation of possession metrics with match outcomes
+(202 team-matches). \junk{} and efficiency measure possession \emph{quality};
+field tilt measures territory.}
+\label{tab:corr}
+\end{table}
+
+Splitting the 70 teams that held more than 55\% possession by efficiency
+sharpens the point: the 8 below-median (junk) dominators averaged 1.07 xG,
+0.62 goals, and 1.00 points; the 62 efficient dominators averaged 2.05 xG,
+2.24 goals, and 2.23 points. Holding the ball without efficiency yields 28\% of
+the goals and draw-level points (Figure~\ref{fig:quadrant}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.62\linewidth]{figures/event_quadrant.png}
+\caption{Among the 70 teams that held over 55\% possession, splitting by
+efficiency (median) separates outcomes sharply: the 8 low-efficiency ``junk''
+dominators average 0.62 goals and 1.00 points, versus 2.24 and 2.23 for the 62
+efficient dominators. Possession without threat is close to worthless.}
+\label{fig:quadrant}
+\end{figure}
+
+\subsection{Learned sequence weights}
+A logistic model predicting whether a possession sequence ends in a shot, from
+its peak threat gain, box entry, final-third share and touch count, reaches
+5-fold AUC $0.907 \pm 0.004$. All threat features load positively; box entry
+was under-weighted by the initial heuristic ($0.03 \to 0.10$, adopted in
+Eq.~\ref{eq:value}). Final-third share is deliberately \emph{excluded} from
+Eq.~\ref{eq:value}: including it collapses the index toward field tilt, which
+Section~\ref{sec:partial} shows does not predict points.
+
+\subsection{Not a repackaging of territory}
+\label{sec:partial}
+Regressing points on raw possession, field tilt, and \junk{} jointly, \junk{}
+remains a significant negative predictor ($\beta=-0.023$, $p=0.008$) while
+field tilt does not ($p=0.19$); regressing xG difference, the sign flips ---
+tilt is strongly significant ($p<10^{-4}$) and \junk{} is absorbed
+($p=0.51$). ``Did the team create chances'' is answered by territory; ``did it
+win'' is answered by possession quality. The two are different axes, not a
+relabelling.
+
+\subsection{Orthogonality to on-ball possession value}
+\label{sec:vaep}
+The sharpest objection is that the junk index merely repackages on-ball
+possession value (EPV/VAEP/OBV). We test this directly with our own VAEP
+implementation~\citep{decroos2019actions} trained on the same event schema. At
+the surface, team offensive VAEP is \emph{correlated} with the possession-quality
+metrics ($r=-0.49$ with \junk{}, $+0.58$ with efficiency, $+0.52$ with
+effective possession) --- so the metrics are not orthogonal by construction;
+VAEP is a genuine competitor. Yet when VAEP and field tilt are entered as
+controls, the possession-quality metrics dominate the outcome variance and VAEP
+adds nothing significant (Table~\ref{tab:vaep}): \junk{} predicts points at
+$p<10^{-4}$ with VAEP not significant ($p=0.40$), and efficiency predicts xG
+difference at $p<10^{-4}$ with VAEP not significant ($p=0.46$). A surface
+correlation of $\approx0.5$ collapses to nothing once both terms share a
+regression --- the junk index carries outcome-relevant, off-ball information
+that on-ball action value does not. This is the paper's central quantitative
+claim.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+Outcome $\sim$ controls $+$ quality & term & $\beta$ & $p$ \\
+\midrule
+\multirow{2}{*}{Points $\sim$ VAEP $+$ tilt $+$ \junk{}}
+  & VAEP  & $+0.25$ & $0.40$ \\
+  & \junk{} & $-0.035$ & $<10^{-4}$ \\
+\midrule
+\multirow{2}{*}{xG diff $\sim$ VAEP $+$ tilt $+$ efficiency}
+  & VAEP       & $+0.17$ & $0.46$ \\
+  & efficiency & $+6.09$ & $<10^{-4}$ \\
+\bottomrule
+\end{tabular}
+\caption{Possession-quality metrics survive controlling for on-ball VAEP; VAEP
+does not survive controlling for them. (202 team-matches; full coefficient
+table in the repository.)}
+\label{tab:vaep}
+\end{table}
+
+\subsection{Out-of-sample}
+In-sample correlations risk tautology (describing games already lost). Two
+splits that never use the target game or period: (a) \emph{first-to-second
+half} --- a team's first-half efficiency predicts its second-half xG
+($r=+0.33$) and first-half \junk{} predicts lower second-half xG ($r=-0.25$),
+with team strength implicitly controlled by staying within one match; (b)
+\emph{leave-one-match-out team trait} --- a team's mean efficiency in its
+\emph{other} matches predicts this match's points ($r=+0.31$) and its mean
+\junk{} predicts lower points ($r=-0.31$) and xG difference ($-0.34$).
+Junk possession is a persistent team property, not a post-hoc description.
+
+\subsection{Dead versus set-up junk}
+Extending the label across possession boundaries, a junk sequence is
+\emph{redeemed} if the same team regains the ball within 25\,s and reaches
+threat --- a build-up, not dead circulation. Only 9\% of tied-or-losing junk is
+redeemed; 91\% is genuinely dead. The dead-only variant improves in-sample
+prediction slightly (points $r$: $-0.39 \to -0.42$) but is essentially
+identical out-of-sample --- an honest null: most flagged junk really is dead,
+so the refinement adds interpretation, not power.
+
+\section{The Spatial Layer: Space-Creation Index}
+\label{sec:sci}
+
+The event index sees only the ball; it flags \emph{that} a possession failed to
+threaten, not \emph{why}. To adjudicate whether a flagged possession created
+space, we project broadcast video to pitch coordinates and measure the change
+in pitch control.
+
+\paragraph{GSR pipeline.} We use a CPU-only broadcast pipeline of open
+components: PnLCalib camera calibration~\citep{gutierrez2024pnlcalib} with a
+temporal anchor bridge, BoT-SORT tracking~\citep{aharon2022botsort},
+colour-based team assignment (per-match Lab chroma comparators, robust to
+daylight), and shot-change gating to drop replays and close-ups. Off-screen
+players are imputed with a training-free ghosting layer (companion work); we
+report windows where the SCI verdict is robust to that imputation.
+
+\paragraph{Space-Creation Index.} For a flagged window with possessing team
+$P$,
+\begin{equation}
+\mathrm{SCI} = \Delta_{\mathrm{own}} + \Delta_{\mathrm{opp}},
+\end{equation}
+where $\Delta_{\mathrm{own}}$ is the change in $P$'s pitch-control share of the
+attacking third between the first and last thirds of the window, and
+$\Delta_{\mathrm{opp}}$ is the collapse of the opponent's control share in its
+own advanced zone (both percentage points, from the pitch-control model of
+\citet{spearman2017physics}). Large SCI $=$ the possession pushed the block
+back and seized dangerous space (space creation, unlucky); SCI $\approx 0$ $=$
+the block never moved (dead junk, spatially confirming the event flag). We use
+the prespecified operational bins from earlier internal work: \emph{space
+creation} (SCI $\ge +12$), \emph{weak progression} ($+4 \le$ SCI $< +12$),
+\emph{dead possession} (SCI $< +4$).
+
+\paragraph{Macro/micro roles.} The two layers divide labour
+(Table~\ref{tab:layers}): the event index scans whole matches instantly and
+plants time-stamped flags; the spatial layer processes the short broadcast
+window each flag points to and answers why.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+Layer & Input & Role \\
+\midrule
+Event junk index & Full-match events (instant) & Time-stamp \emph{flags} junk \\
+Spatial SCI      & 10--60\,s broadcast window   & \emph{Why} (was the block moved?) \\
+\bottomrule
+\end{tabular}
+\caption{The macro (event) and micro (spatial) layers.}
+\label{tab:layers}
+\end{table}
+
+\section{Tournament-Scale Results}
+\label{sec:results}
+
+We processed every event-flagged junk window (auto-clipped from full-match
+video by scoreboard-clock kickoff alignment, extra time excluded) for nine 2026
+World Cup matches: 31 windows survived the pipeline
+(Table~\ref{tab:agg}). Across the tournament, \textbf{74\% of flagged junk is
+spatially confirmed dead}, 19\% weak progression, and \textbf{6\% genuine space
+creation} that the event flag alone would misclassify as failure. The
+distribution is stable as the corpus grew from six matches (21 windows;
+71/24/5) to nine (31; 74/19/6): most junk really is dead, and the spatial layer
+earns its keep on the minority the event flag gets wrong.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+Match & Windows & Dead & Weak & Space \\
+\midrule
+NED--MAR (R32) & 3 & 3 & 0 & 0 \\
+ENG--GHA (grp) & 4 & 3 & 1 & 0 \\
+NED--JPN (grp) & 4 & 3 & 1 & 0 \\
+FRA--SWE (R32) & 4 & 4 & 0 & 0 \\
+PAR--FRA (QF)  & 2 & 1 & 1 & 0 \\
+FRA--MAR (SF)  & 4 & 1 & 2 & 1 \\
+GER--PAR (R16) & 3 & 2 & 0 & 1 \\
+NOR--BRA (R16) & 4 & 4 & 0 & 0 \\
+MEX--ENG (R16) & 3 & 2 & 1 & 0 \\
+\midrule
+Total          & 31 & 23 & 6 & 2 \\
+\bottomrule
+\end{tabular}
+\caption{Spatial verdicts on event-flagged junk windows, nine World Cup
+matches. Two windows with low kit contrast and one with a poor-quality clip
+were excluded.}
+\label{tab:agg}
+\end{table}
+
+\paragraph{Case: sterile domination that went out.} Germany held 73\% of the
+ball against Paraguay in the Round of 16, drew 1--1, and were eliminated on
+penalties. Both flagged Germany windows are spatially dead (SCI $-24.4$ and
+$-14.2$): the ball moved, the Paraguayan block did not. This is the textbook
+the index is built to catch --- a scoreline (elimination) that possession
+percentage alone would never predict from a dominant side, confirmed
+off-ball. Correctly scoring the shootout as a Germany loss (not a draw)
+matters: treating penalty eliminations as draws is a common miscoding that
+would blunt exactly this signal.
+
+\paragraph{Case: unlucky, not sterile.} In the same match, a Paraguay window at
+76:01 scores SCI $+18.0$ --- space creation. The event index flagged it as
+junk (no shot), but Paraguay dragged the block out of shape and manufactured
+space it did not convert. This is the 6\% the two-layer design exists for: the
+event flag and the spatial verdict disagree, and the spatial layer is right.
+Figure~\ref{fig:sci} contrasts this window with a dead Germany window from the
+same match: the possessing team's control of the attacking third surges
+($+28$\pp{}) when it creates space, and falls ($-11$\pp{}) while the opponent's
+block advances ($+13$\pp{}) when the possession is dead.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/sci_contrast.png}
+\caption{Two flagged junk windows from the same match (Germany--Paraguay),
+opposite verdicts. Pitch-control share at the window's start versus end. Left:
+Paraguay creates space --- its control of the attacking third jumps 39$\to$67
+(SCI $+18.0$). Right: Germany's possession is dead --- its attacking-third
+control falls 64$\to$53 while Paraguay's block advances 64$\to$77 (SCI
+$-24.4$). $\mathrm{SCI} = \Delta_{\mathrm{own}} + \Delta_{\mathrm{opp}}$; the
+event flag alone cannot tell the two apart.}
+\label{fig:sci}
+\end{figure}
+
+\paragraph{Case: junk flags on a winning side.} Norway beat Brazil despite a
+high junk-flag rate; all four flagged Norway windows are spatially dead. The
+flags were correct --- that possession \emph{was} dead --- and the win came
+from the efficient, non-junk moments the index does not flag. High junk share
+and a win are not a contradiction; they are a team that wasted much of the ball
+and still converted enough.
+
+\paragraph{Event-side contrast.} The event layer already separates cases that
+share a scoreline. South Africa lost 0--1 to Canada holding 57\% (efficiency
+0.27, \junk{} 57\%, tied until the 91st minute): textbook junk, no excuse.
+South Korea also held 57\% and lost 1--0 to Mexico, but at efficiency 0.41 ---
+they used the ball and lost to finishing, not sterility. Same possession, same
+result, opposite diagnosis.
+
+\section{Limitations and Future Work}
+\label{sec:limitations}
+
+The event index is a ball-only approximation of an off-ball question; the
+spatial layer supplies the off-ball evidence only on short flagged windows, not
+whole matches --- a macro/micro hybrid, which we argue is the realistic optimum
+for broadcast footage but is not full-match tracking. The xG term uses shot
+location only (body part and phase approximated), and the sequence weights
+(0.7, 0.10) and thresholds ($q<0.15$; SCI $+12/+4$) are round operational
+values, partly justified by the learned weights (Section~\ref{sec:validation})
+but not externally optimised. On the spatial side, team assignment degrades for
+low-contrast kits (white and striped kits, night matches): three windows were
+excluded on this ground and one on clip quality, and per-match kit comparators
+were set by inspection. Extra-time windows are excluded because regulation
+kickoff offsets do not transfer. The SCI depends on pitch control computed over
+imputed off-screen players; we report only windows robust to the imputation,
+but a systematic sensitivity study across the full corpus is future work, as is
+velocity-aware space \emph{value} (weighting controlled space by threat) and a
+learned replacement for the operational thresholds.
+
+\section{Reproducibility}
+\label{sec:repro}
+
+The event-side index, validation battery (including the VAEP orthogonality
+regression), and tournament aggregation run on CPU over an event corpus and are
+released with code at \url{https://github.com/nowayfootball/junk-possession}.
+The spatial case-study pipeline consumes World Cup broadcast footage we cannot
+redistribute; the pipeline code is described but the footage and per-clip
+artifacts are not included. No GPU or cloud expenditure was used.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}
