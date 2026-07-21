@@ -2,8 +2,8 @@
 
 An off-ball **possession-quality** framework for football: separate *unlucky*
 possession (that manufactured space it failed to convert) from *dead*
-possession (that never moved the opponent's block) — a distinction on-ball
-possession value (EPV / VAEP / OBV) cannot make.
+possession (that never moved the opponent's block) — a distinction event-only
+on-ball possession value (EPV / VAEP / OBV) cannot make from its inputs alone.
 
 Possession percentage is the most-cited and most-misleading number in the game.
 Existing possession-value models price the **on-ball** action; the question a
@@ -31,13 +31,13 @@ Among teams above 55% possession, splitting by efficiency separates the outcome:
 ![event quadrant](figures/event_quadrant.png)
 
 *Junk dominators (n=8): 0.62 goals, 1.00 points. Efficient dominators (n=63):
-2.24 goals, 2.24 points (split by the corpus-wide median efficiency; eight
-observations, descriptive only).*
+2.24 goals, 2.24 points (split by the **corpus-wide** median efficiency, not a
+within-group split; eight observations, descriptive only).*
 
 **Not a repackaging of on-ball value.** With team offensive VAEP and field tilt
-held fixed in the same regression, `junk-open` stays a strong negative predictor
-of points (p < 10⁻⁴, and under match-clustered standard errors) while **VAEP
-itself is not significant** (p = 0.34). Despite a surface correlation of ~0.5
+held fixed in the same regression, `junk-open` stays strongly negatively
+**associated** with points (p < 10⁻⁴, and under
+match-clustered standard errors) while **VAEP itself is not significant** (p = 0.34). Despite a surface correlation of ~0.5
 between VAEP and the junk metrics, conditional on the quality metric VAEP is not
 a significant predictor — the index adds outcome-relevant information beyond this
 on-ball action-value model. See `src/junk_cluster_se.py` for the clustered
@@ -59,10 +59,12 @@ opposite verdicts. Left: Paraguay seizes the attacking third (SCI +18.0). Right:
 Germany is non-space-creating (SCI −24.4) — it lost attacking-third control while
 Paraguay's block advanced; it held 73% of the ball and went out on penalties.*
 
-Across 31 flagged windows from nine World Cup matches: **74% spatially
-non-space-creating, 19% weak progression, 6% space-creating** windows the event
-flag alone would score as failure (a purposive nine-match sample, not a
-tournament-wide estimate).
+Across 31 flagged windows from nine World Cup matches (a **purposive**
+multi-match sample, not tournament-wide): **74% spatially non-space-creating, 19%
+weak progression, 6% space-creating** windows the event flag alone would score as
+failure. `junk` names the event-side candidate flag; SCI does not revise it but
+subdivides each low-threat window as spatially dead, weakly progressing, or
+space-creating.
 
 ## Repository layout
 

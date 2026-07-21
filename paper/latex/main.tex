@@ -39,9 +39,10 @@
 \begin{abstract}
 Ball possession is the most-cited and most-misleading number in football:
 sixty percent of the ball spent recycling in one's own half is not the same as
-sixty percent spent pinning the opponent back. Existing possession-value
+sixty percent spent pinning the opponent back. Existing event-based possession-value
 frameworks --- expected threat, VAEP, on-ball value --- refine the count by
-pricing \emph{on-ball} actions, but they are blind to the off-ball question a
+pricing \emph{on-ball} actions, but from event data alone they are blind to the
+off-ball question a
 sterile possession actually poses: did holding the ball \emph{create space},
 or was the circulation genuinely dead? We answer this in two layers. First, an
 event-side \emph{junk-possession index} decomposes possession into sequences,
@@ -50,15 +51,17 @@ grid, and --- after reconstructing the live scoreline to exclude
 lead-protecting circulation --- flags low-threat sequences in tied-or-losing
 game states. On the 2026 FIFA World Cup (103 matches, 206 team-matches) this
 flag correlates negatively with points ($r=-0.37$) and expected-goal
-difference ($r=-0.51$); team-matches above 55\% possession with below-median
-efficiency average 0.62 goals and 1.00 points versus 2.24 and 2.24 for
-efficient dominators. Crucially, the flag is not a repackaging of on-ball
-value: with team offensive VAEP and field tilt held fixed in the same
-regression, the junk flag remains a strong negative predictor of points
-($p<10^{-4}$) while VAEP itself is not significant --- the index adds
+difference ($r=-0.51$); team-matches above 55\% possession with below the
+corpus-wide median efficiency average 0.62 goals and 1.00 points versus 2.24 and
+2.24 for efficient dominators. Crucially, the flag is not a repackaging of
+on-ball value: with team offensive VAEP and field tilt held fixed in the same
+regression, the junk flag remains strongly negatively associated with points
+($p<10^{-4}$, and under match-clustered errors) while VAEP itself is not
+significant --- the index adds
 outcome-relevant information beyond this on-ball action-value model. Second, for
 a flagged
-window we resolve \emph{why} it was junk by projecting broadcast video to pitch
+window we resolve whether it was spatially dead or space-creating by projecting
+broadcast video to pitch
 coordinates and measuring a \emph{Space-Creation Index} (SCI): a net
 pitch-control change capturing whether the possession seized dangerous space or
 pushed the opponent's block back. Across 31 flagged windows from
@@ -68,7 +71,8 @@ would score as failure --- including a possessing team that dominated 73\% of th
 ball and went out on penalties (two windows, both spatially non-creating) set
 against a space-creating window that produced no shot. The two layers together
 separate ``space-creating but unconverted'' from ``sterile'' possession, a
-distinction on-ball possession value cannot make.
+distinction event-only on-ball possession value cannot make from its inputs
+alone.
 \end{abstract}
 
 \section{Introduction}
@@ -103,15 +107,15 @@ This paper contributes an off-ball possession-quality framework in two layers:
 \begin{enumerate}
 \item \textbf{An event-side junk-possession index} (Section~\ref{sec:index})
 that flags low-threat possession in decision-relevant game states, and a
-validation battery (Section~\ref{sec:validation}) showing it predicts
+validation battery (Section~\ref{sec:validation}) showing it is associated with
 outcomes, holds up in held-out splits, and --- our central claim --- is
 \emph{not reducible} to on-ball possession value: controlling for VAEP does not
 remove its predictive content.
 \item \textbf{A spatial Space-Creation Index} (Section~\ref{sec:sci}) computed
 from broadcast video via a game-state-reconstruction (GSR) pipeline, which
-adjudicates \emph{why} a flagged possession was junk --- space-creating or
-dead --- and a tournament-scale study of 31 flagged windows from nine World Cup
-matches (Section~\ref{sec:results}).
+adjudicates whether an event-flagged low-threat possession was spatially dead or
+space-creating --- and a multi-match spatial study of 31 flagged windows from
+nine World Cup matches (Section~\ref{sec:results}).
 \end{enumerate}
 
 The event layer scans whole matches cheaply and plants time-stamped flags; the
@@ -303,8 +307,8 @@ territory measure we deliberately keep distinct from possession quality
 \subsection{Not a repackaging of territory}
 \label{sec:partial}
 Regressing points on raw possession, field tilt, and \junk{} jointly, \junk{}
-remains a significant negative predictor ($\beta=-0.020$, $p=0.017$) while
-field tilt is not significant ($p=0.14$); regressing xG difference, the
+remains significantly negatively associated with points ($\beta=-0.020$,
+$p=0.017$) while field tilt is not ($p=0.14$); regressing xG difference, the
 significance pattern reverses --- tilt is strongly significant ($p<10^{-4}$) and
 \junk{} is absorbed ($p=0.77$). In these two models, chance-creation (xG
 difference) tracks territory while points track possession quality
@@ -323,8 +327,8 @@ metrics ($r=-0.49$ with \junk{}, $+0.58$ with efficiency, $+0.52$ with
 effective possession) --- so the metrics are not orthogonal by construction;
 VAEP is a genuine competitor. Yet when VAEP and field tilt are entered as
 controls, the possession-quality metrics remain the significant predictors
-while VAEP does not (Table~\ref{tab:vaep}): \junk{} predicts points at
-$p<10^{-4}$ with VAEP not significant ($p=0.34$), and efficiency predicts xG
+while VAEP does not (Table~\ref{tab:vaep}): \junk{} is associated with points at
+$p<10^{-4}$ with VAEP not significant ($p=0.34$), and efficiency with xG
 difference at $p<10^{-4}$ with VAEP not significant ($p=0.46$). Despite a surface
 correlation of $\approx0.5$, conditional on the possession-quality metric VAEP
 is not a significant predictor of the outcome, so the junk index carries
@@ -425,8 +429,10 @@ went nowhere or backwards. We use the prespecified operational bins from earlier
 internal work: \emph{space creation} (SCI $\ge +12$), \emph{weak progression}
 ($+4 \le$ SCI $< +12$), and \emph{non-space-creating} (SCI $< +4$, spanning
 static and regressive possession). All analysed windows already satisfy the
-event-side junk definition ($q<0.15$); SCI does not overturn that label but
-subdivides the windows into these three spatial subtypes.
+event-side low-threat definition ($q<0.15$); SCI does not revise that
+event-side classification --- it determines whether each event-flagged low-threat
+sequence was nevertheless spatially dead, weakly progressing, or space-creating.
+Throughout, ``junk'' names the event-side candidate flag, not a final verdict.
 
 \paragraph{Macro/micro roles.} The two layers divide labour
 (Table~\ref{tab:layers}): the event index scans whole matches instantly and
@@ -448,7 +454,7 @@ Spatial SCI      & 10--60\,s broadcast window   & \emph{Why} (was the block move
 \label{tab:layers}
 \end{table}
 
-\section{Tournament-Scale Results}
+\section{Multi-Match Spatial Results}
 \label{sec:results}
 
 The nine matches here are a \emph{purposive}, not random, sample: they were
@@ -466,9 +472,9 @@ spatially classified non-space-creating}, 19\% weak progression, and \textbf{6\%
 space-creating} windows that the event flag alone would score as failure
 (proportions from 31 windows; a small-sample estimate, not a tournament-wide
 prevalence). The proportions shifted only modestly as this sample grew from six
-matches (21 windows; 71/24/5) to nine (31; 74/19/6): most flagged junk is indeed
-non-space-creating, and the spatial layer earns its keep on the minority that
-receive a different spatial verdict.
+matches (21 windows; 71/24/5) to nine (31; 74/19/6): most flagged junk in this
+purposively selected sample is non-space-creating, and the spatial layer earns
+its keep on the minority that receive a different spatial verdict.
 
 \begin{table}[t]
 \centering
@@ -504,9 +510,11 @@ attacking-third control while the Paraguayan block, far from being pushed back,
 advanced. This is the textbook
 the index is built to catch --- a scoreline (elimination) that possession
 percentage alone would never predict from a dominant side, evident
-off-ball. Correctly scoring the shootout as a Germany loss (not a draw)
-matters: treating penalty eliminations as draws is a common miscoding that
-would blunt exactly this signal.
+off-ball. The outcome coding matters here: for our advancement-based outcome
+definition, scoring the shootout elimination as a Germany loss preserves the
+advancement information, whereas coding the match as a regulation draw --- a
+legitimate alternative convention --- would attenuate this particular
+association.
 
 \paragraph{Case: space-creating, not sterile.} In the same match, a Paraguay
 window at 76:01 scores SCI $+18.0$ --- space-creating. The event index flagged
