@@ -2,7 +2,7 @@
   "title": "Space-Creating versus Dead Possession: An Off-Ball Possession-Quality Index for Broadcast Football",
   "upload_type": "publication",
   "publication_type": "preprint",
-  "description": "Event-side junk-possession index and spatial Space-Creation Index (SCI) for distinguishing space-creating from dead possession in broadcast football. Includes the index, validation battery (correlations, out-of-sample tests, and VAEP orthogonality regression), and tournament-scale spatial verification.",
+  "description": "Event-side junk-possession index and spatial Space-Creation Index (SCI) for distinguishing space-creating from dead possession in broadcast football. Includes the index, validation battery (correlations, out-of-sample tests, and VAEP non-reducibility regression with match-clustered standard errors), and tournament-scale spatial verification.",
   "license": "MIT",
   "access_right": "open",
   "keywords": [

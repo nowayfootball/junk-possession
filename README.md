@@ -15,45 +15,54 @@ We answer in two layers.
 ## Two layers
 
 **1. Event-side junk-possession index.** Split possession into sequences, price
-each by its counterfactual threat potential under an expected-threat grid, and —
+each by its peak threat gain (credited even without a shot) under an
+expected-threat grid, and —
 after reconstructing the live scoreline to drop lead-protecting circulation —
 flag low-threat sequences in tied-or-losing game states (`junk-open`).
 
-On the 2026 FIFA World Cup (101 matches, 202 team-matches):
+On the 2026 FIFA World Cup (103 matches, 206 team-matches):
 
 | metric | Team xG | Goals | Points | xG diff |
 |---|---|---|---|---|
-| `junk-open` | −0.38 | −0.37 | **−0.39** | −0.52 |
+| `junk-open` | −0.38 | −0.38 | **−0.37** | −0.51 |
 
 Among teams above 55% possession, splitting by efficiency separates the outcome:
 
 ![event quadrant](figures/event_quadrant.png)
 
-*Junk dominators (n=8): 0.62 goals, 1.00 points. Efficient dominators (n=62):
-2.24 goals, 2.23 points. Possession without threat is close to worthless.*
+*Junk dominators (n=8): 0.62 goals, 1.00 points. Efficient dominators (n=63):
+2.24 goals, 2.24 points (split by the corpus-wide median efficiency; eight
+observations, descriptive only).*
 
 **Not a repackaging of on-ball value.** With team offensive VAEP and field tilt
 held fixed in the same regression, `junk-open` stays a strong negative predictor
-of points (p < 10⁻⁴) while **VAEP itself is not significant** (p = 0.40). A
-surface correlation of ~0.5 between VAEP and the junk metrics collapses to
-nothing once both share a regression — the index carries off-ball information
-on-ball action value does not.
+of points (p < 10⁻⁴, and under match-clustered standard errors) while **VAEP
+itself is not significant** (p = 0.34). Despite a surface correlation of ~0.5
+between VAEP and the junk metrics, conditional on the quality metric VAEP is not
+a significant predictor — the index adds outcome-relevant information beyond this
+on-ball action-value model. See `src/junk_cluster_se.py` for the clustered
+re-estimation.
 
 **2. Spatial Space-Creation Index (SCI).** For a flagged window, project
-broadcast video to pitch coordinates and measure whether the possession pushed
-the opponent's block back:
+broadcast video to pitch coordinates and measure a **net two-zone pitch-control
+change** — space seized high up and/or the opponent's block pushed back:
 
 > SCI = Δ(possessor's attacking-third control) + Δ(opponent's advanced-zone collapse)
+>
+> (Δ_opp is defined as *collapse* = early − late, so a positive term means the
+> opponent's deep control fell; SCI is the net of the two.)
 
 ![sci contrast](figures/sci_contrast.png)
 
-*Two flagged junk windows from the same match (Germany–Paraguay), opposite
-verdicts. Left: Paraguay creates space (SCI +18.0). Right: Germany's possession
-is dead (SCI −24.4) — it held 73% of the ball and went out on penalties.*
+*Two flagged junk windows from the same match (Germany–Paraguay, Round of 32),
+opposite verdicts. Left: Paraguay seizes the attacking third (SCI +18.0). Right:
+Germany is non-space-creating (SCI −24.4) — it lost attacking-third control while
+Paraguay's block advanced; it held 73% of the ball and went out on penalties.*
 
-Across 31 flagged windows from nine World Cup matches: **74% spatially dead, 19%
-weak progression, 6% genuine space creation** the event flag alone would
-misclassify.
+Across 31 flagged windows from nine World Cup matches: **74% spatially
+non-space-creating, 19% weak progression, 6% space-creating** windows the event
+flag alone would score as failure (a purposive nine-match sample, not a
+tournament-wide estimate).
 
 ## Repository layout
 
@@ -62,7 +71,8 @@ src/
   junk_possession.py   # the index: sequence value, junk-open, score-state normalisation
   junk_rank.py         # corpus-wide ranking (per-tournament)
   junk_validate.py     # validation: correlations, weight learning, partial regression,
-                       #             VAEP orthogonality, out-of-sample, redemption
+                       #             VAEP non-reducibility, out-of-sample, redemption
+  junk_cluster_se.py   # match-clustered (CR1) robust SE for the headline regressions
   space_signature.py   # Space-Creation Index from projected spatial series
 paper/
   latex/main.tex       # the paper (arXiv source) + refs.bib + figures
@@ -72,8 +82,8 @@ figures/               # figures used in the README and paper
 
 ## Reproducibility and data
 
-The event-side index, validation battery (including the VAEP orthogonality
-regression), and tournament aggregation run on CPU. The **event corpus**
+The event-side index, validation battery (including the VAEP non-reducibility
+regression and its match-clustered re-estimation), and tournament aggregation run on CPU. The **event corpus**
 (WhoScored-derived) and the **broadcast footage** used for the spatial layer are
 **not redistributable**, so the scripts here are released as the reference
 implementation described in the paper rather than a turnkey pipeline; they depend
