@@ -51,21 +51,23 @@ grid, and --- after reconstructing the live scoreline to exclude
 lead-protecting circulation --- flags low-threat sequences in tied-or-losing
 game states. On the 2026 FIFA World Cup (103 matches, 206 team-matches) this
 flag correlates negatively with points ($r=-0.37$) and expected-goal
-difference ($r=-0.51$); team-matches above 55\% possession with below the
+difference ($r=-0.51$; the latter partly mechanically coupled, as the index
+embeds a shot-xG term); team-matches above 55\% possession with below the
 corpus-wide median efficiency average 0.62 goals and 1.00 points versus 2.24 and
 2.24 for efficient dominators. Crucially, the flag is not a repackaging of
 on-ball value: with team offensive VAEP and field tilt held fixed in the same
 regression, the junk flag remains strongly negatively associated with points
 ($p<10^{-4}$, and under match-clustered errors) while VAEP itself is not
-significant --- the index adds
+significant --- in this same-match (descriptive) regression the index adds
 outcome-relevant information beyond this on-ball action-value model. Second, for
 a flagged
 window we resolve whether it was spatially dead or space-creating by projecting
 broadcast video to pitch
 coordinates and measuring a \emph{Space-Creation Index} (SCI): a net
 pitch-control change capturing whether the possession seized dangerous space or
-pushed the opponent's block back. Across 31 flagged windows from
-nine World Cup matches, 74\% are spatially classified as non-space-creating,
+pushed the opponent's block back. Across 31 analysable flagged windows (of 35)
+from nine purposively selected World Cup matches, 74\% are spatially classified
+as non-space-creating,
 19\% weak progression, and 6\% space-creating windows that the event flag alone
 would score as failure --- including a possessing team that dominated 73\% of the
 ball and went out on penalties (two windows, both spatially non-creating) set
@@ -214,7 +216,7 @@ sterile index.
 \begin{table}[t]
 \centering
 \small
-\begin{tabular}{ll}
+\begin{tabular}{lp{0.72\linewidth}}
 \toprule
 Metric & Definition \\
 \midrule
@@ -245,7 +247,9 @@ Table~\ref{tab:corr} gives Pearson correlations of each possession metric with
 match outcomes. \junk{} is negatively associated with expected goals
 ($-0.38$), goals ($-0.38$), points ($-0.37$), and xG difference ($-0.51$):
 the more a team circulates without threat in a tied-or-losing state, the less
-it actually creates and wins. Threat-weighting helps in this sample --- effective
+it scores and wins. (The xG and xG-difference columns are partly
+mechanically coupled to the index, which embeds a shot-xG term ---
+Section~\ref{sec:limitations}; goals and points are the cleaner columns.) Threat-weighting helps in this sample --- effective
 possession tracks xG slightly better than raw possession ($0.56$ vs $0.50$) --- and efficiency is
 the strongest single threat signal in this sample ($0.59$). Field tilt
 correlates with xG ($0.58$) but weakly with points ($0.18$): camping in the final third without winning is precisely
@@ -291,10 +295,10 @@ the 63 efficient dominators (eight observations, so descriptive only).}
 
 \subsection{Learned sequence weights}
 A logistic model predicting whether a possession sequence ends in a shot, from
-its peak threat gain, box entry, final-third share and touch count, reaches
+its peak threat gain, box touch, final-third share and touch count, reaches
 5-fold AUC $0.907 \pm 0.004$ (mean $\pm$ cross-fold standard deviation; folds
 are not match-grouped, so this is an upper-bound estimate). All threat features
-load positively; the fitted standardised box-entry coefficient ($+0.60$) is
+load positively; the fitted standardised box-touch coefficient ($+0.60$) is
 large relative to peak-threat gain ($+0.39$), which motivated raising the
 box weight from the initial $0.03$ to $0.10$ in Eq.~\ref{eq:value} --- a
 data-informed but not formally calibrated choice (we did not grid-search the
@@ -310,14 +314,16 @@ Regressing points on raw possession, field tilt, and \junk{} jointly, \junk{}
 remains significantly negatively associated with points ($\beta=-0.020$,
 $p=0.017$) while field tilt is not ($p=0.14$); regressing xG difference, the
 significance pattern reverses --- tilt is strongly significant ($p<10^{-4}$) and
-\junk{} is absorbed ($p=0.77$). In these two models, chance-creation (xG
+\junk{} is absorbed ($p=0.77$). (Both are OLS; $p$-values here are iid ---
+the \junk{}-on-points result also holds under match-clustered CR1 errors,
+$p=0.014$.) In these two models, chance-creation (xG
 difference) tracks territory while points track possession quality
 --- consistent with the two being different axes, not a relabelling.
 
 \subsection{Not reducible to on-ball possession value}
 \label{sec:vaep}
 The sharpest objection is that the junk index merely repackages on-ball
-possession value (EPV/VAEP/OBV). We test this directly with our own VAEP
+possession value (EPV, VAEP, OBV). We test this directly with our own VAEP
 implementation~\citep{decroos2019actions} (learned on the same WhoScored event
 schema; specification and code released in the repository). A weak comparator
 could spuriously favour our index, so we note that this is an event-fed VAEP ---
@@ -336,7 +342,10 @@ outcome-relevant variance that this on-ball action-value model does not capture
 on its own. This is the paper's central quantitative claim. (We report
 conditional significance --- not a zero VAEP effect, nor a formal test that the
 two coefficients differ; confidence intervals and a match-clustered
-re-estimation are in the repository.)
+re-estimation are in the repository. And because \junk{} is constructed from
+live score state, this same-match regression is descriptive
+(Section~\ref{sec:limitations}); the cross-fitted splits below carry the
+predictive weight.)
 
 \begin{table}[t]
 \centering
@@ -381,7 +390,7 @@ strict time-respecting forecast.
 \subsection{Dead versus set-up junk}
 Extending the label across possession boundaries, a junk sequence is
 \emph{redeemed} if the same team regains the ball within 25\,s and reaches
-threat (a peak-xT gain $\ge 0.04$ or a box entry on that next possession) ---
+threat (a peak-xT gain $\ge 0.04$ or a box touch on that next possession) ---
 a build-up, not dead circulation. Only 9\% of tied-or-losing junk (event-weighted,
 the same denominator as \junk{}) is redeemed under this rule; the remaining 91\% is not. The
 dead-only variant improves in-sample
@@ -418,7 +427,8 @@ and pitch-control share aggregated over each zone,
 \Delta_{\mathrm{own}} = \bar C^{\text{last}}_{P,A} - \bar C^{\text{first}}_{P,A},\qquad
 \Delta_{\mathrm{opp}} = \bar C^{\text{first}}_{O,Z} - \bar C^{\text{last}}_{O,Z},
 \end{equation}
-so $\Delta_{\mathrm{opp}}>0$ means $O$'s control \emph{collapsed} (both terms in
+so $\Delta_{\mathrm{opp}}>0$ means $O$'s presence in $Z$ \emph{receded} --- its
+shape was pushed back (both terms in
 percentage points, from the pitch-control model of
 \citet{spearman2017physics}). SCI is a \emph{net} two-zone change: large positive
 SCI $=$ the possession seized the attacking third and/or pushed the opponent's
@@ -519,9 +529,11 @@ association.
 \paragraph{Case: space-creating, not sterile.} In the same match, a Paraguay
 window at 76:01 scores SCI $+18.0$ --- space-creating. The event index flagged
 it as junk (no shot), but Paraguay seized the attacking third
-($\Delta_{\mathrm{own}}=+28$\pp{}); the net SCI is positive even though Germany's
-deep block did not itself collapse ($\Delta_{\mathrm{opp}}=-10$\pp{}), so the
-space was won high up rather than by caving the block in. Paraguay did not
+($\Delta_{\mathrm{own}}=+28$\pp{}); the net SCI is positive even though the
+opponent term worked against it --- Germany's presence in the mirror zone near
+Paraguay's goal actually \emph{grew} ($\Delta_{\mathrm{opp}}=-10$\pp{}) --- so
+the space was won in Germany's defensive third, not by pushing Germany's shape
+back. Paraguay did not
 convert it (whether through poor execution or chance, the spatial layer does not
 adjudicate). This is the 6\% the two-layer design
 exists for: the event flag reads low threat (failure) while the spatial verdict reads space creation, and the spatial
@@ -548,7 +560,7 @@ event flag alone cannot tell the two apart.}
 \paragraph{Case: junk flags on a winning side.} Norway beat Brazil despite a
 high junk-flag rate; all four flagged Norway windows are spatially non-creating,
 and Norway still won. High junk share and a win are not a contradiction: the
-flags correctly mark the possessions that created no space, and the index does
+flags mark possessions that SCI likewise classifies as non-creating, and the index does
 not claim those were the only possessions --- a team can waste much of the ball
 and still convert elsewhere.
 
@@ -556,8 +568,9 @@ and still convert elsewhere.
 share a scoreline. South Africa lost 0--1 to Canada holding 57\% (efficiency
 0.27, \junk{} 57\%, tied until the 91st minute): textbook junk, no excuse.
 South Korea also held 57\% and lost 1--0 to Mexico, but at efficiency 0.41 ---
-their possession was less sterile by this index --- lost for reasons other than
-circulation without threat. Same possession, same result, opposite diagnosis.
+their possession was less sterile by this index --- whatever cost them the
+match, this index does not locate it in circulation without threat. Same
+possession, same result, opposite diagnosis.
 
 \section{Limitations and Future Work}
 \label{sec:limitations}
@@ -576,10 +589,12 @@ values, partly justified by the learned weights (Section~\ref{sec:validation})
 but not externally optimised. Two further construct caveats: sequence value
 includes a shot-xG term (Eq.~\ref{eq:value}), so the xG-based associations
 (Table~\ref{tab:corr}, the efficiency--xG-difference regression) are partly
-mechanically coupled --- the \emph{goals} and \emph{points} outcomes, which do
-not enter the index, are the outcomes not built into it (they are not fully
-independent --- shot xG predicts goals, and goals move the score state that
-gates \junk{} --- but they are the cleaner endpoints); and the $q$-normalising
+mechanically coupled --- the \emph{goals} and \emph{points} outcomes are not
+built into the index's formula, though they are not fully independent of it:
+shot xG predicts goals, goals move the score state that gates \junk{}, and the
+xG model itself is fit in-sample on this corpus's shot--goal labels (no
+out-of-fold protocol), so goal information enters the index weakly through that
+fit --- but they remain the cleaner endpoints; and the $q$-normalising
 90th percentile, the $q<0.15$ threshold, and the learned box weight are all
 corpus-wide quantities, so the out-of-sample splits are cross-fitted only up to
 these global constants. On inference: \junk{} is built from
