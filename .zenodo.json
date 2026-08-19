@@ -13,6 +13,13 @@
     "space creation",
     "game state reconstruction"
   ],
+  "related_identifiers": [
+    {
+      "identifier": "arXiv:2608.09887",
+      "relation": "isSupplementTo",
+      "scheme": "arxiv"
+    }
+  ],
   "creators": [
     {
       "name": "Choi, Seongjin",

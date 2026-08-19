@@ -25,3 +25,9 @@ preferred-citation:
       given-names: Seongjin
       orcid: "https://orcid.org/0009-0001-3193-7424"
   year: 2026
+  journal: "arXiv preprint arXiv:2608.09887"
+  url: "https://arxiv.org/abs/2608.09887"
+  identifiers:
+    - type: other
+      value: "arXiv:2608.09887"
+      description: "arXiv preprint identifier"
