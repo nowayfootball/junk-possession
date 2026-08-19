@@ -86,6 +86,16 @@ paper/
 figures/               # figures used in the README and paper
 ```
 
+## Companion work
+
+The spatial layer runs on broadcast footage, where only 10–16 of 22 players are
+visible. The off-screen imputation it depends on is the subject of a companion
+paper — **Training-Free Off-Screen Player Imputation for Broadcast-Based Spatial
+Football Analytics**:
+[arXiv:2607.11548](https://arxiv.org/abs/2607.11548) ·
+[code](https://github.com/nowayfootball/offscreen-impute) ·
+[10.5281/zenodo.21327945](https://doi.org/10.5281/zenodo.21327945).
+
 ## Reproducibility and data
 
 The event-side index, validation battery (including the VAEP non-reducibility

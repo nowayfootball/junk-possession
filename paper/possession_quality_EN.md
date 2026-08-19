@@ -1,6 +1,6 @@
 # Space-Creating versus Dead Possession: An Off-Ball Possession-Quality Index for Broadcast Football
 
-*Draft — target: arXiv preprint / SSAC research track. Full paper: `analysis/gsr/paper2/main.tex` (arXiv preprint). Code: https://github.com/nowayfootball/junk-possession.*
+*Preprint: [arXiv:2608.09887](https://arxiv.org/abs/2608.09887) · archived code [10.5281/zenodo.22015972](https://doi.org/10.5281/zenodo.22015972) · code https://github.com/nowayfootball/junk-possession. This summary condenses the paper; the manuscript is the citable source.*
 
 ## Abstract
 

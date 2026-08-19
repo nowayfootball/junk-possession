@@ -2,7 +2,7 @@
 ### 중계 영상 기반 오프볼(off-ball) 점유질 지수
 
 **Seongjin Choi** · 독립 연구자 · ORCID 0009-0001-3193-7424 · nowayfootball@gmail.com
-코드: github.com/nowayfootball/junk-possession *(초고 — 국문판)*
+프리프린트: [arXiv:2608.09887](https://arxiv.org/abs/2608.09887) · 코드 아카이브 [10.5281/zenodo.22015972](https://doi.org/10.5281/zenodo.22015972) · 코드: github.com/nowayfootball/junk-possession *(국문 요약본 — 인용 정본은 영문 논문)*
 
 ---
 
