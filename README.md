@@ -1,5 +1,9 @@
 # Space-Creating versus Dead Possession
 
+[![arXiv](https://img.shields.io/badge/arXiv-2608.09887-b31b1b.svg)](https://arxiv.org/abs/2608.09887)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22015972.svg)](https://doi.org/10.5281/zenodo.22015972)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 An off-ball **possession-quality** framework for football: separate *unlucky*
 possession (that manufactured space it failed to convert) from *dead*
 possession (that never moved the opponent's block) — a distinction event-only
@@ -97,8 +101,25 @@ follows Karun Singh's expected-threat grid.
 
 ## Citation
 
-See `CITATION.cff`. Paper: *Space-Creating versus Dead Possession: An Off-Ball
-Possession-Quality Index for Broadcast Football* (Seongjin Choi, 2026).
+Paper: *Space-Creating versus Dead Possession: An Off-Ball Possession-Quality
+Index for Broadcast Football* — Seongjin Choi, 2026.
+[arXiv:2608.09887](https://arxiv.org/abs/2608.09887) ·
+archived code [10.5281/zenodo.22015972](https://doi.org/10.5281/zenodo.22015972)
+(concept DOI, always resolves to the latest release).
+
+```bibtex
+@article{choi2026spacecreating,
+  title  = {Space-Creating versus Dead Possession: An Off-Ball Possession-Quality
+            Index for Broadcast Football},
+  author = {Choi, Seongjin},
+  year   = {2026},
+  eprint = {2608.09887},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CV}
+}
+```
+
+Machine-readable metadata is in `CITATION.cff`.
 
 ## License
 
